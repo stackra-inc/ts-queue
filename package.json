@@ -38,7 +38,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@stackra/contracts": "workspace:*"
+    "@stackra/contracts": "github:stackra-inc/contracts#main"
   },
   "peerDependencies": {
     "@heroui-pro/react": "^1.0.0-beta.3",
