@@ -41,17 +41,17 @@
     "@stackra/contracts": "workspace:*"
   },
   "peerDependencies": {
-    "@heroui-pro/react": "catalog:heroui",
-    "@stackra/ts-container": "workspace:*",
-    "@stackra/ts-coordinator": "workspace:*",
-    "@stackra/ts-events": "workspace:*",
-    "@stackra/ts-logger": "workspace:*",
-    "@stackra/ts-support": "workspace:*",
+    "@heroui-pro/react": "^1.0.0-beta.3",
+    "@stackra/ts-container": "*",
+    "@stackra/ts-coordinator": "*",
+    "@stackra/ts-events": "*",
+    "@stackra/ts-logger": "*",
+    "@stackra/ts-support": "*",
     "@stackra/vite-config": "workspace:*",
-    "@upstash/qstash": "catalog:",
-    "@vivtel/metadata": "catalog:",
-    "react": "catalog:react",
-    "reflect-metadata": "catalog:"
+    "@upstash/qstash": "^2.11.0",
+    "@vivtel/metadata": "^1.0.5",
+    "react": "^19.2.6",
+    "reflect-metadata": "^0.2.2"
   },
   "peerDependenciesMeta": {
     "@stackra/ts-container": {
@@ -86,18 +86,18 @@
     }
   },
   "devDependencies": {
-    "@heroui-pro/react": "catalog:heroui",
+    "@heroui-pro/react": "^1.0.0-beta.3",
     "@stackra/testing": "workspace:*",
-    "@stackra/ts-container": "workspace:*",
-    "@stackra/ts-coordinator": "workspace:*",
-    "@stackra/ts-events": "workspace:*",
-    "@stackra/ts-logger": "workspace:*",
-    "@stackra/ts-support": "workspace:*",
-    "@stackra/typescript-config": "catalog:stackra",
+    "@stackra/ts-container": "github:stackra-inc/ts-container#main",
+    "@stackra/ts-coordinator": "github:stackra-inc/ts-coordinator#main",
+    "@stackra/ts-events": "github:stackra-inc/ts-events#main",
+    "@stackra/ts-logger": "github:stackra-inc/ts-logger#main",
+    "@stackra/ts-support": "github:stackra-inc/ts-support#main",
+    "@stackra/typescript-config": "^1.0.12",
     "@stackra/vite-config": "workspace:*",
-    "@upstash/qstash": "catalog:",
-    "@vivtel/metadata": "catalog:",
-    "react": "catalog:react",
-    "reflect-metadata": "catalog:"
+    "@upstash/qstash": "^2.11.0",
+    "@vivtel/metadata": "^1.0.5",
+    "react": "^19.2.6",
+    "reflect-metadata": "^0.2.2"
   }
 }
