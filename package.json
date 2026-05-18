@@ -1,0 +1,103 @@
+{
+  "name": "@stackra/ts-queue",
+  "version": "0.1.0",
+  "description": "Client-side job queue \u2014 multiple drivers, processor discovery, retry, DI integration",
+  "license": "MIT",
+  "author": {
+    "name": "Stackra L.L.C",
+    "email": "dev@stackra.com",
+    "url": "https://stackra.com"
+  },
+  "keywords": [
+    "stackra",
+    "typescript",
+    "queue",
+    "job-queue",
+    "workers",
+    "retry",
+    "dependency-injection"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check-types": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules/.cache",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@stackra/contracts": "workspace:*"
+  },
+  "peerDependencies": {
+    "@heroui-pro/react": "catalog:heroui",
+    "@stackra/ts-container": "workspace:*",
+    "@stackra/ts-coordinator": "workspace:*",
+    "@stackra/ts-events": "workspace:*",
+    "@stackra/ts-logger": "workspace:*",
+    "@stackra/ts-support": "workspace:*",
+    "@stackra/vite-config": "workspace:*",
+    "@upstash/qstash": "catalog:",
+    "@vivtel/metadata": "catalog:",
+    "react": "catalog:react",
+    "reflect-metadata": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@stackra/ts-container": {
+      "optional": false
+    },
+    "@stackra/ts-support": {
+      "optional": false
+    },
+    "reflect-metadata": {
+      "optional": false
+    },
+    "@stackra/ts-events": {
+      "optional": true
+    },
+    "@stackra/ts-logger": {
+      "optional": false
+    },
+    "@stackra/ts-coordinator": {
+      "optional": true
+    },
+    "@stackra/vite-config": {
+      "optional": false
+    },
+    "@upstash/qstash": {
+      "optional": true
+    },
+    "@vivtel/metadata": {
+      "optional": false
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@heroui-pro/react": "catalog:heroui",
+    "@stackra/testing": "workspace:*",
+    "@stackra/ts-container": "workspace:*",
+    "@stackra/ts-coordinator": "workspace:*",
+    "@stackra/ts-events": "workspace:*",
+    "@stackra/ts-logger": "workspace:*",
+    "@stackra/ts-support": "workspace:*",
+    "@stackra/typescript-config": "catalog:stackra",
+    "@stackra/vite-config": "workspace:*",
+    "@upstash/qstash": "catalog:",
+    "@vivtel/metadata": "catalog:",
+    "react": "catalog:react",
+    "reflect-metadata": "catalog:"
+  }
+}
