@@ -37,9 +37,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "dependencies": {
-    "@stackra/contracts": "github:stackra-inc/contracts#main"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@heroui-pro/react": "^1.0.0-beta.3",
     "@stackra/ts-container": "*",
@@ -51,7 +49,8 @@
     "@upstash/qstash": "^2.11.0",
     "@vivtel/metadata": "^1.0.5",
     "react": "^19.2.6",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "@stackra/contracts": "*"
   },
   "peerDependenciesMeta": {
     "@stackra/ts-container": {
