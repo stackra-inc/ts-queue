@@ -12,25 +12,25 @@ importers:
         specifier: ^1.0.0-beta.3
         version: 1.0.0-beta.4
       '@stackra/contracts':
-        specifier: github:stackra-inc/contracts#195bfa1
+        specifier: github:stackra-inc/contracts#main
         version: https://codeload.github.com/stackra-inc/contracts/tar.gz/195bfa165411057dee5107275b1605469c39781e
       '@stackra/testing':
         specifier: github:stackra-inc/testing#main
         version: https://codeload.github.com/stackra-inc/testing/tar.gz/adc8a77edef21052319117ed0af90886ea21f7eb(vitest@4.1.7(@types/node@22.19.19)(vite@8.0.14(@types/node@22.19.19)(esbuild@0.27.7)))
       '@stackra/ts-container':
-        specifier: github:stackra-inc/ts-container#38bc484
-        version: https://codeload.github.com/stackra-inc/ts-container/tar.gz/38bc484e349c7592f0233d6c632351db2d92f57d(react@19.2.6)
+        specifier: github:stackra-inc/ts-container#main
+        version: https://codeload.github.com/stackra-inc/ts-container/tar.gz/f928d94a47d661dfce6f54590399e05e56196e15(react@19.2.6)
       '@stackra/ts-coordinator':
         specifier: github:stackra-inc/ts-coordinator#main
-        version: https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/199fdc157ef748545aa02eceefc126dc929a6e56(@stackra/ts-events@https://codeload.github.com/stackra-inc/ts-events/tar.gz/39f3ca831283437337d75d2726c62828babd54ba(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6))(react@19.2.6)
+        version: https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/9d1369b63fc29f713057f850883299345579d90d(react@19.2.6)(rxjs@7.8.2)
       '@stackra/ts-events':
         specifier: github:stackra-inc/ts-events#main
-        version: https://codeload.github.com/stackra-inc/ts-events/tar.gz/39f3ca831283437337d75d2726c62828babd54ba(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)
+        version: https://codeload.github.com/stackra-inc/ts-events/tar.gz/880d182d202ebe114246c0f440a0bf4c7043ded9(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)
       '@stackra/ts-logger':
-        specifier: github:stackra-inc/ts-logger#6e654dd
-        version: https://codeload.github.com/stackra-inc/ts-logger/tar.gz/6e654ddbff7def65d02ffd565e7271a2d8fe1e10(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)
+        specifier: github:stackra-inc/ts-logger#main
+        version: https://codeload.github.com/stackra-inc/ts-logger/tar.gz/7f5afb74800bf3881fe0d1aef1b24af804eb4e61(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)
       '@stackra/ts-support':
-        specifier: github:stackra-inc/ts-support#f44738a
+        specifier: github:stackra-inc/ts-support#main
         version: https://codeload.github.com/stackra-inc/ts-support/tar.gz/f44738ad8629bf0b0b12513ba44f4e0f2e0b3054
       '@stackra/tsup-config':
         specifier: ^1.0.12
@@ -511,8 +511,8 @@ packages:
       vitest:
         optional: true
 
-  '@stackra/ts-container@https://codeload.github.com/stackra-inc/ts-container/tar.gz/38bc484e349c7592f0233d6c632351db2d92f57d':
-    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-container/tar.gz/38bc484e349c7592f0233d6c632351db2d92f57d}
+  '@stackra/ts-container@https://codeload.github.com/stackra-inc/ts-container/tar.gz/f928d94a47d661dfce6f54590399e05e56196e15':
+    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-container/tar.gz/f928d94a47d661dfce6f54590399e05e56196e15}
     version: 2.1.0
     peerDependencies:
       react: 19.2.3
@@ -520,20 +520,18 @@ packages:
       react:
         optional: true
 
-  '@stackra/ts-coordinator@https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/199fdc157ef748545aa02eceefc126dc929a6e56':
-    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/199fdc157ef748545aa02eceefc126dc929a6e56}
+  '@stackra/ts-coordinator@https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/9d1369b63fc29f713057f850883299345579d90d':
+    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/9d1369b63fc29f713057f850883299345579d90d}
     version: 0.1.0
     peerDependencies:
-      '@stackra/ts-events': '*'
       react: ^19.2.6
+      rxjs: ^7.8.2
     peerDependenciesMeta:
-      '@stackra/ts-events':
-        optional: true
       react:
         optional: true
 
-  '@stackra/ts-events@https://codeload.github.com/stackra-inc/ts-events/tar.gz/39f3ca831283437337d75d2726c62828babd54ba':
-    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-events/tar.gz/39f3ca831283437337d75d2726c62828babd54ba}
+  '@stackra/ts-events@https://codeload.github.com/stackra-inc/ts-events/tar.gz/880d182d202ebe114246c0f440a0bf4c7043ded9':
+    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-events/tar.gz/880d182d202ebe114246c0f440a0bf4c7043ded9}
     version: 1.0.0
     peerDependencies:
       '@vivtel/metadata': ^1.0.5
@@ -542,8 +540,8 @@ packages:
       react:
         optional: true
 
-  '@stackra/ts-logger@https://codeload.github.com/stackra-inc/ts-logger/tar.gz/6e654ddbff7def65d02ffd565e7271a2d8fe1e10':
-    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-logger/tar.gz/6e654ddbff7def65d02ffd565e7271a2d8fe1e10}
+  '@stackra/ts-logger@https://codeload.github.com/stackra-inc/ts-logger/tar.gz/7f5afb74800bf3881fe0d1aef1b24af804eb4e61':
+    resolution: {tarball: https://codeload.github.com/stackra-inc/ts-logger/tar.gz/7f5afb74800bf3881fe0d1aef1b24af804eb4e61}
     version: 1.0.0
     peerDependencies:
       '@vivtel/metadata': ^1.0.5
@@ -1504,27 +1502,26 @@ snapshots:
     optionalDependencies:
       vitest: 4.1.7(@types/node@22.19.19)(vite@8.0.14(@types/node@22.19.19)(esbuild@0.27.7))
 
-  '@stackra/ts-container@https://codeload.github.com/stackra-inc/ts-container/tar.gz/38bc484e349c7592f0233d6c632351db2d92f57d(react@19.2.6)':
+  '@stackra/ts-container@https://codeload.github.com/stackra-inc/ts-container/tar.gz/f928d94a47d661dfce6f54590399e05e56196e15(react@19.2.6)':
     dependencies:
       '@vivtel/metadata': 1.0.5(reflect-metadata@0.2.2)
       reflect-metadata: 0.2.2
     optionalDependencies:
       react: 19.2.6
 
-  '@stackra/ts-coordinator@https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/199fdc157ef748545aa02eceefc126dc929a6e56(@stackra/ts-events@https://codeload.github.com/stackra-inc/ts-events/tar.gz/39f3ca831283437337d75d2726c62828babd54ba(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6))(react@19.2.6)':
+  '@stackra/ts-coordinator@https://codeload.github.com/stackra-inc/ts-coordinator/tar.gz/9d1369b63fc29f713057f850883299345579d90d(react@19.2.6)(rxjs@7.8.2)':
     dependencies:
       rxjs: 7.8.2
     optionalDependencies:
-      '@stackra/ts-events': https://codeload.github.com/stackra-inc/ts-events/tar.gz/39f3ca831283437337d75d2726c62828babd54ba(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)
       react: 19.2.6
 
-  '@stackra/ts-events@https://codeload.github.com/stackra-inc/ts-events/tar.gz/39f3ca831283437337d75d2726c62828babd54ba(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)':
+  '@stackra/ts-events@https://codeload.github.com/stackra-inc/ts-events/tar.gz/880d182d202ebe114246c0f440a0bf4c7043ded9(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)':
     dependencies:
       '@vivtel/metadata': 1.0.5(reflect-metadata@0.2.2)
     optionalDependencies:
       react: 19.2.6
 
-  '@stackra/ts-logger@https://codeload.github.com/stackra-inc/ts-logger/tar.gz/6e654ddbff7def65d02ffd565e7271a2d8fe1e10(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)':
+  '@stackra/ts-logger@https://codeload.github.com/stackra-inc/ts-logger/tar.gz/7f5afb74800bf3881fe0d1aef1b24af804eb4e61(@vivtel/metadata@1.0.5(reflect-metadata@0.2.2))(react@19.2.6)':
     dependencies:
       '@vivtel/metadata': 1.0.5(reflect-metadata@0.2.2)
       consola: 3.4.2
