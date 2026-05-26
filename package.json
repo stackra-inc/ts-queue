@@ -1,7 +1,7 @@
 {
   "name": "@stackra/ts-queue",
   "version": "0.1.0",
-  "description": "Client-side job queue \u2014 multiple drivers, processor discovery, retry, DI integration",
+  "description": "Client-side job queue — multiple drivers, processor discovery, retry, DI integration",
   "license": "MIT",
   "author": {
     "name": "Stackra L.L.C",
@@ -45,7 +45,6 @@
     "@stackra/ts-events": "*",
     "@stackra/ts-logger": "*",
     "@stackra/ts-support": "*",
-    "@stackra/vite-config": "^1.0.0",
     "@upstash/qstash": "^2.11.0",
     "@vivtel/metadata": "^1.0.5",
     "react": "^19.2.6",
@@ -71,9 +70,6 @@
     "@stackra/ts-coordinator": {
       "optional": true
     },
-    "@stackra/vite-config": {
-      "optional": false
-    },
     "@upstash/qstash": {
       "optional": true
     },
@@ -93,7 +89,6 @@
     "@stackra/ts-logger": "github:stackra-inc/ts-logger#main",
     "@stackra/ts-support": "github:stackra-inc/ts-support#main",
     "@stackra/typescript-config": "^1.0.12",
-    "@stackra/vite-config": "^1.0.0",
     "@upstash/qstash": "^2.11.0",
     "@vivtel/metadata": "^1.0.5",
     "react": "^19.2.6",
