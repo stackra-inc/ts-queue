@@ -92,6 +92,8 @@
     "@vivtel/metadata": "^1.0.5",
     "react": "19.2.6",
     "reflect-metadata": "^0.2.2",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.7",
+    "@stackra/tsup-config": "^1.0.12",
+    "tsup": "^8.5.1"
   }
 }
