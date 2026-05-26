@@ -39,12 +39,6 @@
   },
   "peerDependencies": {
     "@heroui-pro/react": "^1.0.0-beta.3",
-    "@stackra/contracts": "*",
-    "@stackra/ts-container": "*",
-    "@stackra/ts-coordinator": "*",
-    "@stackra/ts-events": "*",
-    "@stackra/ts-logger": "*",
-    "@stackra/ts-support": "*",
     "@upstash/qstash": "^2.11.0",
     "@vivtel/metadata": "^1.0.5",
     "react": "19.2.3",

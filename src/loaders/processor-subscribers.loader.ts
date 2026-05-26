@@ -24,7 +24,7 @@ import {
   Injectable,
   Inject,
   Optional,
-  type IOnApplicationBootstrap,
+  type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@stackra/ts-container';
 
@@ -55,7 +55,7 @@ interface EventManagerLike {
  * to the running {@link QueueManager}.
  */
 @Injectable()
-export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnApplicationShutdown {
+export class ProcessorSubscribersLoader implements OnApplicationBootstrap, OnApplicationShutdown {
   /** Every worker started by the loader — stopped on shutdown. */
   private readonly workers: Worker[] = [];
 
