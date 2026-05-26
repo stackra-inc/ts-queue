@@ -40,36 +40,16 @@
   "peerDependencies": {
     "@heroui-pro/react": "^1.0.0-beta.3",
     "@upstash/qstash": "^2.11.0",
-    "@vivtel/metadata": "^1.0.5",
-    "react": "19.2.3",
-    "reflect-metadata": "^0.2.2"
+    "react": "19.2.3"
   },
   "peerDependenciesMeta": {
-    "@stackra/ts-container": {
-      "optional": false
-    },
-    "@stackra/ts-support": {
-      "optional": false
-    },
-    "reflect-metadata": {
-      "optional": false
-    },
-    "@stackra/ts-events": {
-      "optional": true
-    },
-    "@stackra/ts-logger": {
-      "optional": false
-    },
-    "@stackra/ts-coordinator": {
-      "optional": true
-    },
     "@upstash/qstash": {
       "optional": true
     },
-    "@vivtel/metadata": {
-      "optional": false
-    },
     "react": {
+      "optional": true
+    },
+    "@heroui-pro/react": {
       "optional": true
     }
   },
