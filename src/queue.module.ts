@@ -1,110 +1,154 @@
 /**
- * @fileoverview QueueModule — the DI module that wires everything together.
+ * Queue module.
  *
- * Consumers call `QueueModule.forRoot({...})` once at the app level.
- * The module registers the config, the {@link QueueManager}, per-connection
- * providers for `@InjectQueueConnection(name)`, and the bootstrap loader
- * that discovers `@Processor` classes.
+ * Wires `QueueManager`, the built-in connectors, the per-connection
+ * tokens, and the bootstrap loader for `@Processor` discovery.
  *
- * Processor classes are picked up by the decorator discovery plugin at
- * build time (see the side-effect registration at the bottom of
- * `src/index.ts`). No `forFeature()` is required for them — they only
- * need to be `@Injectable()` and in the DI scan path.
+ * Three registration entry points:
  *
- * @module queue.module
- * @category Module
+ * - `forRoot(config)` — static configuration. Registers all built-in
+ *   connectors (memory/sync/null/local-storage/indexeddb/broadcast-channel/qstash)
+ *   plus the manager and the per-connection tokens.
+ * - `forRootAsync(options)` — async/factory variant for DI-resolved
+ *   configuration.
+ * - `forFeature(driver, ConnectorClass)` — register a custom connector
+ *   so consumers can plug in any extra driver without touching the
+ *   manager source.
+ *
+ * Mirrors `RedisModule`/`RealtimeModule`. The pattern keeps the
+ * manager open to extension and the module surface narrow.
+ *
+ * @module @stackra/ts-queue/queue.module
  */
 
-import { Module, type IDynamicModule } from "@stackra/ts-container";
+import { Global, Module, type DynamicModule, type Type } from '@stackra/ts-container';
+import { Logger } from '@stackra/ts-logger';
 
-import { DEFAULT_QUEUE_CONNECTION_TOKEN, QUEUE_CONFIG, QUEUE_MANAGER } from "@stackra/contracts";
-import { getQueueConnectionToken, getQueueToken } from "@/constants";
-import type { QueueModuleOptions } from "@/interfaces/queue-module-options.interface";
-import { QueueManager } from "@/services/queue-manager.service";
-import { QueueEventBus } from "@/services/event-bus.service";
-import { ProcessorMetadataAccessor } from "@/accessors/processor-metadata.accessor";
-import { ProcessorSubscribersLoader } from "@/loaders/processor-subscribers.loader";
+import {
+  DEFAULT_QUEUE_CONNECTION_TOKEN,
+  QUEUE_CONFIG,
+  QUEUE_MANAGER,
+  type IQueueConnector,
+  type IQueueModuleAsyncOptions,
+  type IQueueModuleOptions,
+} from '@stackra/contracts';
+
+import { QueueManager } from '@/services/queue-manager.service';
+import { QueueEventBus } from '@/services/event-bus.service';
+import { ProcessorMetadataAccessor } from '@/accessors/processor-metadata.accessor';
+import { ProcessorSubscribersLoader } from '@/loaders/processor-subscribers.loader';
+import {
+  BroadcastChannelConnector,
+  IndexedDBConnector,
+  LocalStorageConnector,
+  MemoryConnector,
+  NullConnector,
+  QStashConnector,
+  SyncConnector,
+} from '@/connectors';
+import { getQueueConnectionToken, getQueueToken } from '@/utils';
+import { QueueModuleOptionsError } from '@/errors';
+
+/**
+ * Built-in connector registration entry.
+ */
+interface BuiltInConnector {
+  /** Driver name (matches `QueueConnectionConfig.driver`). */
+  driver: string;
+  /** Connector class to instantiate via DI. */
+  type: Type<IQueueConnector>;
+}
+
+/**
+ * Built-in queue connectors registered automatically by `forRoot()`.
+ *
+ * Adding a new built-in driver: write the connector class, append its
+ * entry here, the manager picks it up automatically. External drivers
+ * that should NOT be in the default bundle stay out of this list and
+ * are registered through `forFeature(driver, ConnectorClass)`.
+ */
+const BUILT_IN_CONNECTORS: ReadonlyArray<BuiltInConnector> = Object.freeze([
+  { driver: 'memory', type: MemoryConnector },
+  { driver: 'sync', type: SyncConnector },
+  { driver: 'null', type: NullConnector },
+  { driver: 'local-storage', type: LocalStorageConnector },
+  { driver: 'indexeddb', type: IndexedDBConnector },
+  { driver: 'broadcast-channel', type: BroadcastChannelConnector },
+  { driver: 'qstash', type: QStashConnector },
+]);
+
 /**
  * Queue DI module.
- *
- * @example
- * ```typescript
- * @Module({
- *   imports: [
- *     QueueModule.forRoot({
- *       default: 'indexeddb',
- *       connections: {
- *         indexeddb: { driver: 'indexeddb', dbName: 'app-queue' },
- *         qstash: {
- *           driver: 'qstash',
- *           mode: 'proxy',
- *           proxyUrl: '/api/queue/publish',
- *           defaultDestination: 'https://api.example.com/webhooks/queue',
- *         },
- *       },
- *       worker: { tries: 3, backoffMs: 1000, timeoutMs: 30_000 },
- *     }),
- *   ],
- * })
- * export class AppModule {}
- * ```
  */
+@Global()
 @Module({})
-// biome-ignore lint/complexity/noStaticOnlyClass: Module pattern requires static methods
 export class QueueModule {
+  /** Scoped logger for module-level diagnostics. */
+  private static readonly logger = new Logger(QueueModule.name);
+
+  // ────────────────────────────────────────────────────────────────────
+  // forRoot
+  // ────────────────────────────────────────────────────────────────────
+
   /**
-   * Configure the queue module globally.
+   * Configure the queue module statically.
    *
    * Registers:
-   * - {@link QUEUE_CONFIG} — the raw {@link QueueModuleOptions} object.
-   * - {@link QueueManager} and {@link QUEUE_MANAGER} alias token.
-   * - {@link DEFAULT_QUEUE_CONNECTION_TOKEN} factory.
-   * - One provider per named connection (`getQueueConnectionToken(name)`).
-   * - One provider for the `(connection, 'default')` handle per named
-   *   connection (`getQueueToken('default', name)`) — powers the
-   *   `@InjectQueue()` shorthand.
-   * - The bootstrap services: {@link ProcessorSubscribersLoader},
-   *   {@link ProcessorMetadataAccessor}, {@link QueueEventBus}.
    *
-   * The returned module is marked `global: true` so every provider is
-   * available app-wide without re-importing.
+   * - `QUEUE_CONFIG` — the raw `IQueueModuleOptions` value.
+   * - `QueueManager` and `QUEUE_MANAGER` alias.
+   * - Every built-in connector listed in {@link BUILT_IN_CONNECTORS}.
+   * - `DEFAULT_QUEUE_CONNECTION_TOKEN` factory.
+   * - One `IQueueConnection` provider per configured connection.
+   * - One default `(connection, "default")` queue handle per connection.
+   * - Bootstrap services for `@Processor` discovery.
    *
-   * @param config - The queue configuration.
-   * @returns A dynamic module.
+   * @param config - Queue configuration.
+   * @returns A dynamic module with everything wired.
+   *
+   * @example
+   * ```typescript
+   * @Module({
+   *   imports: [
+   *     QueueModule.forRoot({
+   *       default: 'indexeddb',
+   *       connections: {
+   *         indexeddb: { driver: 'indexeddb', dbName: 'app-queue' },
+   *         qstash:    { driver: 'qstash', mode: 'proxy', proxyUrl: '/api/q' },
+   *       },
+   *       worker: { tries: 3, backoffMs: 1000, timeoutMs: 30_000 },
+   *     }),
+   *   ],
+   * })
+   * export class AppModule {}
+   * ```
    */
-  public static forRoot(config: QueueModuleOptions): IDynamicModule {
-    // can access it by name — keeps parity with other packages.
-    // One provider per configured connection — powers
-    // `@InjectQueueConnection('name')` and the default-connection token.
-    const connectionProviders: any[] = Object.keys(config.connections).map((name) => ({
-      provide: getQueueConnectionToken(name),
-      useFactory: (manager: QueueManager) => manager.connection(name),
+  public static forRoot(config: IQueueModuleOptions): DynamicModule {
+    QueueModule.validate(config);
+
+    const connectorRegistrations = QueueModule.buildConnectorRegistrations(BUILT_IN_CONNECTORS);
+
+    const connectionProviders = Object.keys(config.connections).map((connectionName) => ({
+      provide: getQueueConnectionToken(connectionName),
+      useFactory: async (manager: QueueManager) => manager.connection(connectionName),
       inject: [QueueManager],
     }));
 
-    // Default connection sentinel so `@InjectQueueConnection()` without a
-    // name works even before the user has read the config.
-    const defaultConnectionProvider: any = {
+    const defaultConnectionProvider = {
       provide: DEFAULT_QUEUE_CONNECTION_TOKEN,
-      useFactory: (manager: QueueManager) => manager.connection(config.default),
+      useFactory: async (manager: QueueManager) => manager.connection(config.default),
       inject: [QueueManager],
     };
 
-    // One `(connection, 'default')` handle per connection — lets
-    // `@InjectQueue()` (no args) resolve to a sensible default handle
-    // without requiring `forFeature`. Additional `(connection, queue)`
-    // handles are built on demand by `manager.queue(...)`.
-    const defaultHandleProviders: any[] = Object.keys(config.connections).map((name) => ({
-      provide: getQueueToken("default", name),
-      useFactory: (manager: QueueManager) => manager.queue("default", name),
+    const defaultHandleProviders = Object.keys(config.connections).map((connectionName) => ({
+      provide: getQueueToken('default', connectionName),
+      useFactory: async (manager: QueueManager) => manager.queue('default', connectionName),
       inject: [QueueManager],
     }));
 
-    // Convenience: `@InjectQueue()` with no args resolves to the
-    // `(default-connection, 'default')` handle.
-    const defaultQueueHandleProvider: any = {
+    const defaultQueueHandleProvider = {
       provide: getQueueToken(),
-      useFactory: (manager: QueueManager) => manager.queue(),
+      useFactory: async (manager: QueueManager) => manager.queue(),
       inject: [QueueManager],
     };
 
@@ -116,14 +160,17 @@ export class QueueModule {
         { provide: QUEUE_CONFIG, useValue: config },
 
         // Manager
-        { provide: QueueManager, useClass: QueueManager },
+        QueueManager,
         { provide: QUEUE_MANAGER, useExisting: QueueManager },
+
+        // Built-in connectors and their auto-registration side-effects.
+        ...connectorRegistrations.providers,
 
         // Connection-level providers
         defaultConnectionProvider,
         ...connectionProviders,
 
-        // Queue handle providers
+        // Default queue handle providers
         defaultQueueHandleProvider,
         ...defaultHandleProviders,
 
@@ -137,27 +184,129 @@ export class QueueModule {
         QueueManager,
         QUEUE_MANAGER,
         DEFAULT_QUEUE_CONNECTION_TOKEN,
-        ...connectionProviders.map((p) => (p as { provide: symbol }).provide),
-        ...defaultHandleProviders.map((p) => (p as { provide: symbol }).provide),
+        ...connectionProviders.map((p) => p.provide),
+        ...defaultHandleProviders.map((p) => p.provide),
         getQueueToken(),
         QueueEventBus,
       ],
     };
   }
 
+  // ────────────────────────────────────────────────────────────────────
+  // forRootAsync
+  // ────────────────────────────────────────────────────────────────────
+
   /**
-   * Register additional queue handles for specific `(queue, connection)`
-   * pairs that need to be injected by token.
+   * Configure the queue module asynchronously.
    *
-   * Handles created on-demand via `manager.queue(...)` are always
-   * available — but to `@InjectQueue('scans', 'indexeddb')` you need a
-   * registered provider. Call `forFeature` per feature module.
+   * Useful when configuration depends on a DI-resolved dependency (a
+   * config service, a feature flag service, etc.). Built-in connectors
+   * are still registered so consumers can use any of the supported
+   * drivers without an additional `forFeature()` call.
+   *
+   * Note: per-connection tokens are NOT registered here because the
+   * connection list is unknown at module-build time. Use
+   * `@InjectQueueConnection()` (no name) or `QueueManager.connection()`
+   * directly when configuring async.
+   *
+   * @param options - Async options carrying `useFactory` / `inject`.
+   */
+  public static forRootAsync(options: IQueueModuleAsyncOptions): DynamicModule {
+    if (!options.useFactory) {
+      QueueModule.logger.warn('[QueueModule] forRootAsync requires useFactory.');
+      return { module: QueueModule, providers: [], exports: [] };
+    }
+
+    const connectorRegistrations = QueueModule.buildConnectorRegistrations(BUILT_IN_CONNECTORS);
+
+    return {
+      module: QueueModule,
+      global: true,
+      imports: (options.imports ?? []) as never[],
+      providers: [
+        {
+          provide: QUEUE_CONFIG,
+          useFactory: options.useFactory,
+          inject: (options.inject ?? []) as never[],
+        },
+
+        QueueManager,
+        { provide: QUEUE_MANAGER, useExisting: QueueManager },
+
+        ...connectorRegistrations.providers,
+
+        QueueEventBus,
+        ProcessorMetadataAccessor,
+        ProcessorSubscribersLoader,
+      ],
+      exports: [QUEUE_CONFIG, QueueManager, QUEUE_MANAGER, QueueEventBus],
+    };
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // forFeature — additional drivers
+  // ────────────────────────────────────────────────────────────────────
+
+  /**
+   * Register an additional connector for a custom driver.
+   *
+   * Mirrors `RealtimeModule.forFeature()` and `RedisModule.forFeature()`.
+   *
+   * @param driver        - Driver name (e.g. `"sqs"`).
+   * @param connectorType - Connector class implementing `IQueueConnector`.
+   * @returns A dynamic module that registers the connector at boot.
    *
    * @example
    * ```typescript
    * @Module({
    *   imports: [
-   *     QueueModule.forFeature([
+   *     QueueModule.forRoot(queueConfig),
+   *     QueueModule.forFeature("sqs", SqsConnector),
+   *   ],
+   * })
+   * export class AppModule {}
+   * ```
+   */
+  public static forFeature(driver: string, connectorType: Type<IQueueConnector>): DynamicModule {
+    const registrationToken = Symbol.for(`QUEUE_CONNECTOR_REGISTRATION:${driver}`);
+
+    return {
+      module: QueueModule,
+      providers: [
+        connectorType,
+        {
+          provide: registrationToken,
+          useFactory: (manager: QueueManager, connector: IQueueConnector) => {
+            manager.registerConnector(driver, connector);
+            return null;
+          },
+          inject: [QueueManager, connectorType],
+        },
+      ],
+      exports: [connectorType],
+    };
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // forFeatureQueues — additional queue handle bindings
+  // ────────────────────────────────────────────────────────────────────
+
+  /**
+   * Register additional queue handles for specific `(queue, connection)`
+   * pairs that need to be injected by token.
+   *
+   * Handles created on demand via `manager.queue(...)` are always
+   * available — but to use `@InjectQueue('scans', 'indexeddb')` you
+   * need a registered provider. Call this per feature module.
+   *
+   * @param queues - Array of `{ queue, connection? }` pairs to register.
+   * @returns A dynamic module exposing the requested handle tokens.
+   *
+   * @example
+   * ```typescript
+   * @Module({
+   *   imports: [
+   *     QueueModule.forFeatureQueues([
    *       { queue: 'scans', connection: 'indexeddb' },
    *       { queue: 'receipts', connection: 'indexeddb' },
    *     ]),
@@ -166,17 +315,98 @@ export class QueueModule {
    * export class ScannerModule {}
    * ```
    */
-  public static forFeature(queues: Array<{ queue: string; connection?: string }>): IDynamicModule {
-    const providers: any[] = queues.map(({ queue, connection }) => ({
-      provide: getQueueToken(queue, connection ?? "default"),
-      useFactory: (manager: QueueManager) => manager.queue(queue, connection),
+  public static forFeatureQueues(
+    queues: Array<{ queue: string; connection?: string }>
+  ): DynamicModule {
+    const providers = queues.map(({ queue, connection }) => ({
+      provide: getQueueToken(queue, connection ?? 'default'),
+      useFactory: async (manager: QueueManager) => manager.queue(queue, connection),
       inject: [QueueManager],
     }));
 
     return {
       module: QueueModule,
       providers,
-      exports: providers.map((p) => (p as { provide: symbol }).provide),
+      exports: providers.map((p) => p.provide),
     };
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // Internal
+  // ────────────────────────────────────────────────────────────────────
+
+  /**
+   * Build provider entries for an array of built-in connectors.
+   *
+   * Each connector is registered as itself plus a side-effect provider
+   * that calls `manager.registerConnector(driver, connector)` so the
+   * manager knows the driver name → connector mapping.
+   *
+   * Typed `any[]` because the DI container's `Provider` union is
+   * recursive and not easily expressible without `any`. The
+   * `RealtimeModule` and `RedisModule` use the same pattern.
+   *
+   * @param connectors - Built-in connector entries to register.
+   * @returns Provider list.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static buildConnectorRegistrations(connectors: ReadonlyArray<BuiltInConnector>): {
+    providers: any[];
+  } {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const providers: any[] = [];
+
+    for (const { driver, type } of connectors) {
+      const registrationToken = Symbol.for(`QUEUE_CONNECTOR_REGISTRATION:${driver}`);
+
+      providers.push(type);
+      providers.push({
+        provide: registrationToken,
+        useFactory: (manager: QueueManager, connector: IQueueConnector) => {
+          manager.registerConnector(driver, connector);
+          return null;
+        },
+        inject: [QueueManager, type],
+      });
+    }
+
+    return { providers };
+  }
+
+  /**
+   * Validate static configuration so misconfiguration surfaces as a
+   * clear error at bootstrap rather than as a confusing runtime
+   * failure on first use.
+   *
+   * @param config - The configuration to validate.
+   */
+  private static validate(config: IQueueModuleOptions): void {
+    if (!config) {
+      throw new QueueModuleOptionsError('[QueueModule] forRoot() requires a configuration object.');
+    }
+
+    if (!config.default) {
+      throw new QueueModuleOptionsError('[QueueModule] config.default is required.');
+    }
+
+    if (!config.connections || Object.keys(config.connections).length === 0) {
+      throw new QueueModuleOptionsError(
+        '[QueueModule] config.connections must define at least one entry.'
+      );
+    }
+
+    if (!config.connections[config.default]) {
+      throw new QueueModuleOptionsError(
+        `[QueueModule] config.default "${config.default}" is not present in config.connections.`
+      );
+    }
+
+    for (const [name, conn] of Object.entries(config.connections)) {
+      if (!conn.driver) {
+        throw new QueueModuleOptionsError(
+          `[QueueModule] connection "${name}" is missing the "driver" field.`
+        );
+      }
+    }
   }
 }

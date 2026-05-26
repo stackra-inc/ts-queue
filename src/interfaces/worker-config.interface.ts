@@ -1,26 +1,30 @@
 /**
- * WorkerConfig — Interface.
+ * Internal worker configuration.
  *
- * @module @stackra/queue/interfaces
+ * Carries everything a `Worker` instance needs to drive a single
+ * `(connection, queue)` polling loop. Lives in this package because
+ * no other package needs to construct a `Worker` directly.
+ *
+ * @module @stackra/ts-queue/interfaces/worker-config
  */
 
-import type { QueueConnection } from "./queue-connection.interface";
-import type { WorkerOptions } from "./worker-options.interface";
-import type { WorkerHost } from "@/hosts/worker-host";
-import type { QueueEventBus } from "@/services/event-bus.service";
+import type { IQueueConnection, IWorkerOptions } from '@stackra/contracts';
+
+import type { WorkerHost } from '@/hosts/worker-host';
+import type { QueueEventBus } from '@/services/event-bus.service';
 
 /**
- * Options passed to a {@link Worker} instance.
+ * Per-worker configuration assembled by the loader.
  */
-export interface WorkerConfig {
-  /** The driver this worker pulls from. */
-  connection: QueueConnection;
+export interface IWorkerConfig {
+  /** Driver this worker pulls from. */
+  connection: IQueueConnection;
   /** Queue tube name within the connection. */
   queue: string;
-  /** The processor host providing `process(job)`. */
+  /** Processor host providing `process(job)`. */
   host: WorkerHost;
-  /** Shared worker policy (poll interval, defaults). */
-  options: Required<WorkerOptions>;
+  /** Shared worker policy resolved with defaults. */
+  options: Required<IWorkerOptions>;
   /** Event bus for lifecycle notifications. */
   eventBus: QueueEventBus;
 }

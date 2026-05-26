@@ -1,26 +1,29 @@
 /**
- * @fileoverview `@OnJobEvent` decorator metadata shape.
+ * `@OnJobEvent` decorator metadata shape.
  *
- * @module interfaces/on-job-event-metadata
- * @category Interfaces
+ * Internal — used only by the `@OnJobEvent` decorator and the
+ * processor-subscribers loader. Not promoted to contracts because
+ * no other package needs to type-check against it.
+ *
+ * @module @stackra/ts-queue/interfaces/on-job-event-metadata
  */
 
-import type { QueueEventDetailName as QueueEventName } from "@stackra/contracts";
+import type { QueueEventName } from '@stackra/contracts';
 
 /**
  * Metadata stored on processor methods by the `@OnJobEvent` decorator.
  *
- * Consumed by the bootstrap loader which wires each method to the
- * matching event on the `EventManager`. Multiple method decorators
- * accumulate into an array under the same metadata key.
+ * Multiple decorators on the same method accumulate into an array
+ * under the metadata key, so the loader inspects the array shape and
+ * subscribes each entry independently.
  */
-export interface OnJobEventMetadata {
-  /** The lifecycle event name — see {@link QueueEvent}. */
+export interface IOnJobEventMetadata {
+  /** Lifecycle event name. */
   event: QueueEventName;
 
   /**
-   * Restrict to events for a specific connection. When omitted, the
-   * handler fires for jobs on any connection.
+   * Restrict the listener to events for a specific connection. When
+   * omitted, the handler fires for jobs on any connection.
    */
   connection?: string;
 }

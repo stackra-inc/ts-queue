@@ -1,7 +1,7 @@
 /**
  * @fileoverview In-memory driver.
  *
- * Jobs live in a `Map<jobId, QueuedJob>`. `pop()` scans for the oldest
+ * Jobs live in a `Map<jobId, IQueuedJob>`. `pop()` scans for the oldest
  * pending job whose `availableAt <= now` and whose `queue` matches the
  * requested tube. Nothing is persisted — reloading the page wipes every
  * job. Use this driver for tests and for truly ephemeral work.
@@ -10,11 +10,10 @@
  * @category Connections
  */
 
-import { JobStatus } from "@stackra/contracts";
-import { createQueuedJob } from "@/utils/create-queued-job.util";
-import type { JobOptions } from "@/interfaces/job-options.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
-import { BaseConnection } from "./base.connection";
+import { JobStatus } from '@stackra/contracts';
+import { createQueuedJob } from '@/utils/create-queued-job.util';
+import type { IJobOptions, IQueuedJob } from '@stackra/contracts';
+import { BaseConnection } from './base.connection';
 
 /**
  * In-memory queue driver.
@@ -29,7 +28,7 @@ import { BaseConnection } from "./base.connection";
  */
 export class MemoryConnection extends BaseConnection {
   /** Every job lives here — pending, reserved, delayed, or failed. */
-  private readonly jobs: Map<string, QueuedJob> = new Map();
+  private readonly jobs: Map<string, IQueuedJob> = new Map();
 
   /**
    * Enqueue a new job onto the in-memory map.
@@ -46,7 +45,7 @@ export class MemoryConnection extends BaseConnection {
    * @param options - Optional dispatch options (queue, delay, retries, …).
    * @returns The id of the enqueued (or deduplicated) job.
    */
-  public async push<T = unknown>(name: string, data: T, options?: JobOptions): Promise<string> {
+  public async push<T = unknown>(name: string, data: T, options?: IJobOptions): Promise<string> {
     const job = createQueuedJob({ name, data, connection: this.name, options });
 
     // Enforce `uniqueFor` by inspecting in-flight jobs with the same
@@ -83,11 +82,11 @@ export class MemoryConnection extends BaseConnection {
    * @param queue - Queue tube name (defaults to `"default"`).
    * @returns The reserved job, or `null` if nothing is eligible.
    */
-  public async pop(queue: string = "default"): Promise<QueuedJob | null> {
+  public async pop(queue: string = 'default'): Promise<IQueuedJob | null> {
     if (this.pausedQueues.has(queue)) return null;
 
     const now = Date.now();
-    let next: QueuedJob | undefined;
+    let next: IQueuedJob | undefined;
 
     // Linear scan — fine for the memory driver since it's intended for
     // short-lived queues. Drivers that might hold thousands of jobs use
@@ -121,7 +120,7 @@ export class MemoryConnection extends BaseConnection {
    * @param queue - Queue tube name (defaults to `"default"`).
    * @returns The number of in-flight jobs.
    */
-  public async size(queue: string = "default"): Promise<number> {
+  public async size(queue: string = 'default'): Promise<number> {
     let count = 0;
     for (const job of this.jobs.values()) {
       if (job.queue !== queue) continue;
@@ -137,7 +136,7 @@ export class MemoryConnection extends BaseConnection {
    * @param queue - Queue tube name (defaults to `"default"`).
    * @returns The pending job count.
    */
-  public async pendingSize(queue: string = "default"): Promise<number> {
+  public async pendingSize(queue: string = 'default'): Promise<number> {
     return this.countByStatus(queue, JobStatus.Pending);
   }
 
@@ -147,7 +146,7 @@ export class MemoryConnection extends BaseConnection {
    * @param queue - Queue tube name (defaults to `"default"`).
    * @returns The delayed job count.
    */
-  public async delayedSize(queue: string = "default"): Promise<number> {
+  public async delayedSize(queue: string = 'default'): Promise<number> {
     return this.countByStatus(queue, JobStatus.Delayed);
   }
 
@@ -157,7 +156,7 @@ export class MemoryConnection extends BaseConnection {
    * @param queue - Queue tube name (defaults to `"default"`).
    * @returns The reserved job count.
    */
-  public async reservedSize(queue: string = "default"): Promise<number> {
+  public async reservedSize(queue: string = 'default'): Promise<number> {
     return this.countByStatus(queue, JobStatus.Reserved);
   }
 
@@ -218,7 +217,7 @@ export class MemoryConnection extends BaseConnection {
    *
    * @param queue - Queue tube name (defaults to `"default"`).
    */
-  public async clear(queue: string = "default"): Promise<void> {
+  public async clear(queue: string = 'default'): Promise<void> {
     for (const [id, job] of this.jobs) {
       if (job.queue === queue) this.jobs.delete(id);
     }

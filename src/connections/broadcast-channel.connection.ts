@@ -14,8 +14,8 @@
  * @category Connections
  */
 
-import type { JobOptions } from "@/interfaces/job-options.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
+import type { IJobOptions } from "@stackra/contracts";
+import type { IQueuedJob } from "@stackra/contracts";
 import { IndexedDBConnection } from "./indexeddb.connection";
 import type { TabCoordinator } from "@stackra/ts-coordinator";
 
@@ -69,7 +69,7 @@ export class BroadcastChannelConnection extends IndexedDBConnection {
   public override async push<T = unknown>(
     name: string,
     data: T,
-    options?: JobOptions,
+    options?: IJobOptions,
   ): Promise<string> {
     return super.push(name, data, options);
   }
@@ -82,7 +82,7 @@ export class BroadcastChannelConnection extends IndexedDBConnection {
    * Leadership is determined by the shared `TabCoordinator` from
    * `@stackra/ts-coordinator`.
    */
-  public override async pop(queue: string = "default"): Promise<QueuedJob | null> {
+  public override async pop(queue: string = "default"): Promise<IQueuedJob | null> {
     if (this.coordinator && !this.coordinator.isLeader()) return null;
     return super.pop(queue);
   }

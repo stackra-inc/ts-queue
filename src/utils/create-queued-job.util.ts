@@ -1,7 +1,7 @@
 /**
- * @fileoverview QueuedJob factory.
+ * @fileoverview IQueuedJob factory.
  *
- * Every driver builds {@link QueuedJob} instances the same way — consistent
+ * Every driver builds {@link IQueuedJob} instances the same way — consistent
  * defaults, timestamps, status, and id. Centralising the construction
  * here keeps drivers focused on storage and prevents subtle field drift
  * between implementations.
@@ -10,12 +10,10 @@
  * @category Utils
  */
 
-import { JobStatus } from "@stackra/contracts";
-import type { JobOptions } from "@/interfaces/job-options.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
-import type { WorkerOptions } from "@/interfaces/worker-options.interface";
-import { generateJobId } from "./generate-job-id.util";
-import { computeUniqueId } from "./compute-unique-id.util";
+import { JobStatus } from '@stackra/contracts';
+import type { IJobOptions, IQueuedJob, IWorkerOptions } from '@stackra/contracts';
+import { generateJobId } from './generate-job-id.util';
+import { computeUniqueId } from './compute-unique-id.util';
 
 /**
  * Arguments for creating a queued job.
@@ -28,13 +26,13 @@ interface CreateQueuedJobArgs<T> {
   /** Connection name. */
   connection: string;
   /** Per-dispatch job options. */
-  options?: JobOptions;
+  options?: IJobOptions;
   /** Worker-level defaults. */
-  workerDefaults?: Partial<WorkerOptions>;
+  workerDefaults?: Partial<IWorkerOptions>;
 }
 
 /**
- * Build a fully-populated {@link QueuedJob} from the dispatch arguments.
+ * Build a fully-populated {@link IQueuedJob} from the dispatch arguments.
  *
  * Applies the precedence chain: per-dispatch `options` → `workerDefaults`
  * → hard-coded fallbacks. Fills in timestamps, a fresh id, the computed
@@ -43,14 +41,14 @@ interface CreateQueuedJobArgs<T> {
  *
  * @typeParam T - Payload type.
  * @param args - The inputs needed to build the job.
- * @returns A new {@link QueuedJob}.
+ * @returns A new {@link IQueuedJob}.
  */
-export function createQueuedJob<T>(args: CreateQueuedJobArgs<T>): QueuedJob<T> {
+export function createQueuedJob<T>(args: CreateQueuedJobArgs<T>): IQueuedJob<T> {
   const { name, data, connection, options = {}, workerDefaults = {} } = args;
   const now = Date.now();
 
   // Resolve each tunable using the precedence chain.
-  const queue = options.queue ?? "default";
+  const queue = options.queue ?? 'default';
   const delayMs = options.delayMs ?? 0;
   const maxAttempts = options.tries ?? workerDefaults.tries ?? 1;
   const backoffMs = options.backoffMs ?? workerDefaults.backoffMs ?? 1000;

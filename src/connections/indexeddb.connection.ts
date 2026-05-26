@@ -17,8 +17,8 @@
 
 import { JobStatus } from "@stackra/contracts";
 import { createQueuedJob } from "@/utils/create-queued-job.util";
-import type { JobOptions } from "@/interfaces/job-options.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
+import type { IJobOptions } from "@stackra/contracts";
+import type { IQueuedJob } from "@stackra/contracts";
 import { BaseConnection } from "./base.connection";
 
 /** Metadata record shape stored in the `meta` object store. */
@@ -84,7 +84,7 @@ export class IndexedDBConnection extends BaseConnection {
    * @param options - Optional dispatch options (queue, delay, retries, …).
    * @returns The id of the persisted (or deduplicated) job.
    */
-  public async push<T = unknown>(jobName: string, data: T, options?: JobOptions): Promise<string> {
+  public async push<T = unknown>(jobName: string, data: T, options?: IJobOptions): Promise<string> {
     const job = createQueuedJob({ name: jobName, data, connection: this.name, options });
     const db = await this.openDb();
 
@@ -112,7 +112,7 @@ export class IndexedDBConnection extends BaseConnection {
       req.onsuccess = () => {
         const cursor = req.result;
         if (cursor) {
-          const existing = cursor.value as QueuedJob;
+          const existing = cursor.value as IQueuedJob;
           if (existing.status !== JobStatus.Completed && existing.status !== JobStatus.Failed) {
             existingId = existing.id;
           }
@@ -138,13 +138,13 @@ export class IndexedDBConnection extends BaseConnection {
    * @param queue - Queue tube name (defaults to `"default"`).
    * @returns The reserved job, or `null` if nothing is eligible.
    */
-  public async pop(queue: string = "default"): Promise<QueuedJob | null> {
+  public async pop(queue: string = "default"): Promise<IQueuedJob | null> {
     if (await this.isPaused(queue)) return null;
 
     const db = await this.openDb();
     const now = Date.now();
 
-    return new Promise<QueuedJob | null>((resolve, reject) => {
+    return new Promise<IQueuedJob | null>((resolve, reject) => {
       const tx = db.transaction([this.jobsStore()], "readwrite");
       const store = tx.objectStore(this.jobsStore());
 
@@ -154,13 +154,13 @@ export class IndexedDBConnection extends BaseConnection {
       const idx = store.index("queue");
       const req = idx.openCursor(IDBKeyRange.only(queue));
 
-      let chosen: QueuedJob | null = null;
+      let chosen: IQueuedJob | null = null;
 
       req.onsuccess = () => {
         const cursor = req.result;
         if (!cursor) return;
 
-        const job = cursor.value as QueuedJob;
+        const job = cursor.value as IQueuedJob;
         const eligible =
           (job.status === JobStatus.Pending || job.status === JobStatus.Delayed) &&
           job.availableAt <= now;
@@ -178,10 +178,10 @@ export class IndexedDBConnection extends BaseConnection {
         // Mark the chosen job Reserved in a follow-up transaction.
         const tx2 = db.transaction([this.jobsStore()], "readwrite");
         const store2 = tx2.objectStore(this.jobsStore());
-        const reserved: QueuedJob = {
-          ...(chosen as QueuedJob),
+        const reserved: IQueuedJob = {
+          ...(chosen as IQueuedJob),
           status: JobStatus.Reserved,
-          attempts: (chosen as QueuedJob).attempts + 1,
+          attempts: (chosen as IQueuedJob).attempts + 1,
           updatedAt: Date.now(),
         };
         store2.put(reserved);
@@ -439,7 +439,7 @@ export class IndexedDBConnection extends BaseConnection {
    */
   private async countMatching(
     queue: string,
-    predicate: (job: QueuedJob) => boolean,
+    predicate: (job: IQueuedJob) => boolean,
   ): Promise<number> {
     const db = await this.openDb();
     return new Promise<number>((resolve, reject) => {
@@ -451,7 +451,7 @@ export class IndexedDBConnection extends BaseConnection {
       req.onsuccess = () => {
         const cursor = req.result;
         if (!cursor) return;
-        if (predicate(cursor.value as QueuedJob)) count++;
+        if (predicate(cursor.value as IQueuedJob)) count++;
         cursor.continue();
       };
 
@@ -464,7 +464,7 @@ export class IndexedDBConnection extends BaseConnection {
    * Load a single job, apply the mutator, write it back. Runs in a single
    * readwrite transaction.
    */
-  private async mutate(jobId: string, mutator: (job: QueuedJob) => void): Promise<void> {
+  private async mutate(jobId: string, mutator: (job: IQueuedJob) => void): Promise<void> {
     const db = await this.openDb();
     return new Promise<void>((resolve, reject) => {
       const tx = db.transaction([this.jobsStore()], "readwrite");
@@ -472,7 +472,7 @@ export class IndexedDBConnection extends BaseConnection {
       const getReq = store.get(jobId);
 
       getReq.onsuccess = () => {
-        const job = getReq.result as QueuedJob | undefined;
+        const job = getReq.result as IQueuedJob | undefined;
         if (!job) return; // nothing to mutate
         mutator(job);
         store.put(job);

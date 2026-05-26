@@ -17,9 +17,9 @@
 import { JobStatus } from "@stackra/contracts";
 import { generateJobId } from "@/utils/generate-job-id.util";
 import { createQueuedJob } from "@/utils/create-queued-job.util";
-import type { JobOptions } from "@/interfaces/job-options.interface";
+import type { IJobOptions } from "@stackra/contracts";
 import type { SyncJobHandler } from "@/types/sync-job-handler.type";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
+import type { IQueuedJob } from "@stackra/contracts";
 import { BaseConnection } from "./base.connection";
 
 /**
@@ -60,7 +60,7 @@ export class SyncConnection extends BaseConnection {
   /**
    * Build a job and invoke the handler immediately.
    *
-   * The sync driver bypasses any queueing — it constructs a {@link QueuedJob}
+   * The sync driver bypasses any queueing — it constructs a {@link IQueuedJob}
    * and forwards it to the registered handler in the same call frame.
    * Errors thrown by the handler propagate to the caller, which is the
    * point: tests can assert on processor failures synchronously.
@@ -80,7 +80,7 @@ export class SyncConnection extends BaseConnection {
    * const id = await conn.push('ping', { x: 1 });
    * ```
    */
-  public async push<T = unknown>(name: string, data: T, options?: JobOptions): Promise<string> {
+  public async push<T = unknown>(name: string, data: T, options?: IJobOptions): Promise<string> {
     const job = createQueuedJob({
       name,
       data,
@@ -112,7 +112,7 @@ export class SyncConnection extends BaseConnection {
    *
    * @returns Always `null`.
    */
-  public async pop(): Promise<QueuedJob | null> {
+  public async pop(): Promise<IQueuedJob | null> {
     return null;
   }
 

@@ -26,20 +26,20 @@ import {
   Optional,
   type IOnApplicationBootstrap,
   type OnApplicationShutdown,
-} from "@stackra/ts-container";
+} from '@stackra/ts-container';
 
-import { EVENT_EMITTER } from "@stackra/contracts";
-import { QueueDriverError } from "@/errors/queue-driver.error";
-import { WorkerHost } from "@/hosts/worker-host";
-import type { OnJobEventMetadata } from "@/interfaces/on-job-event-metadata.interface";
-import type { ProcessorMetadata } from "@/interfaces/processor-metadata.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
-import { ProcessorMetadataAccessor } from "./../accessors/processor-metadata.accessor";
-import { QueueManager } from "./../services/queue-manager.service";
-import { SyncConnection } from "@/connections/sync.connection";
-import { QueueEventBus } from "./../services/event-bus.service";
-import { Worker } from "./../services/worker.service";
-import { Logger } from "@stackra/ts-logger";
+import { EVENT_EMITTER } from '@stackra/contracts';
+import { QueueDriverError } from '@/errors/queue-driver.error';
+import { WorkerHost } from '@/hosts/worker-host';
+import type { IOnJobEventMetadata } from '@/interfaces/on-job-event-metadata.interface';
+import type { IProcessorMetadata } from '@stackra/contracts';
+import type { IQueuedJob } from '@stackra/contracts';
+import { ProcessorMetadataAccessor } from './../accessors/processor-metadata.accessor';
+import { QueueManager } from './../services/queue-manager.service';
+import { SyncConnection } from '@/connections/sync.connection';
+import { QueueEventBus } from './../services/event-bus.service';
+import { Worker } from './../services/worker.service';
+import { Logger } from '@stackra/ts-logger';
 
 // `require` is injected by tsup for CJS interop; declare it so TS is happy.
 declare const require: (id: string) => { getGlobalApplication?: () => unknown };
@@ -80,7 +80,7 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
     private readonly eventBus: QueueEventBus,
     @Optional()
     @Inject(EVENT_EMITTER)
-    private readonly events?: EventManagerLike,
+    private readonly events?: EventManagerLike
   ) {}
 
   /**
@@ -95,16 +95,16 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
    * This mirrors NestJS Bull's `BullExplorer` and stays opt-in — apps
    * that don't decorate any classes simply do nothing here.
    */
-  public onApplicationBootstrap(): void {
+  public async onApplicationBootstrap(): Promise<void> {
     const providers = this.collectProviderInstances();
     if (!providers) return;
 
     for (const instance of providers) {
       const meta = this.metadataAccessor.getProcessorMetadata(
-        (instance as { constructor?: unknown }).constructor,
+        (instance as { constructor?: unknown }).constructor
       );
       if (!meta) continue;
-      this.registerProcessor(instance, meta);
+      await this.registerProcessor(instance, meta);
       this.registerEventListeners(instance);
     }
   }
@@ -149,7 +149,7 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
    */
   private collectProviderInstances(): object[] | null {
     try {
-      const container = require("@stackra/ts-container");
+      const container = require('@stackra/ts-container');
       const app =
         container.getGlobalApplication?.() ?? (globalThis as { __APP__?: unknown }).__APP__;
       if (!app) return null;
@@ -172,7 +172,7 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
       return out;
     } catch (err: Error | any) {
       this.logger.warn(
-        `[QueueLoader] Failed to access global application: ${(err as Error).message}`,
+        `[QueueLoader] Failed to access global application: ${(err as Error).message}`
       );
       return null;
     }
@@ -184,21 +184,21 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
    * Throws if the class doesn't extend {@link WorkerHost} — this catches
    * the common misuse of decorating an arbitrary class.
    */
-  private registerProcessor(instance: object, meta: ProcessorMetadata): void {
+  private async registerProcessor(instance: object, meta: IProcessorMetadata): Promise<void> {
     if (!(instance instanceof WorkerHost)) {
       throw new QueueDriverError(
-        `[QueueLoader] Processor class '${(instance as { constructor?: { name?: string } }).constructor?.name}' must extend WorkerHost.`,
+        `[QueueLoader] Processor class '${(instance as { constructor?: { name?: string } }).constructor?.name}' must extend WorkerHost.`
       );
     }
 
     const connectionName = meta.connection ?? this.manager.getDefaultConnectionName();
-    const connection = this.manager.connection(connectionName);
+    const connection = await this.manager.connection(connectionName);
     const options = this.manager.getWorkerOptions();
 
     // Sync driver handles jobs inline on push — no worker loop needed.
     // Register the processor as the handler so push() routes to it.
     if (connection instanceof SyncConnection) {
-      connection.setHandler(async (job: QueuedJob) => {
+      connection.setHandler(async (job: IQueuedJob) => {
         await Promise.resolve(instance.process(job));
       });
       return;
@@ -237,9 +237,9 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
     if (!proto) return;
 
     for (const key of Object.getOwnPropertyNames(proto)) {
-      if (key === "constructor") continue;
+      if (key === 'constructor') continue;
       const method = (instance as Record<string, unknown>)[key];
-      if (typeof method !== "function") continue;
+      if (typeof method !== 'function') continue;
 
       const entries = this.metadataAccessor.getOnJobEventMetadata(method);
       if (!entries) continue;
@@ -262,7 +262,7 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
    * @param methodKey - Property name of the method on the prototype.
    * @param meta      - Decorator metadata describing the event binding.
    */
-  private subscribe(instance: object, methodKey: string, meta: OnJobEventMetadata): void {
+  private subscribe(instance: object, methodKey: string, meta: IOnJobEventMetadata): void {
     if (!this.events) return;
 
     const listener = (...args: unknown[]) => {
@@ -275,9 +275,9 @@ export class ProcessorSubscribersLoader implements IOnApplicationBootstrap, OnAp
       try {
         const fn = (instance as Record<string, unknown>)[methodKey] as (...a: unknown[]) => unknown;
         const result = fn.call(instance, ...args);
-        if (result && typeof (result as Promise<unknown>).then === "function") {
+        if (result && typeof (result as Promise<unknown>).then === 'function') {
           (result as Promise<unknown>).catch((err: Error | any) =>
-            this.logger.error(`[QueueLoader] ${methodKey} handler threw: ${String(err)}`),
+            this.logger.error(`[QueueLoader] ${methodKey} handler threw: ${String(err)}`)
           );
         }
       } catch (err: Error | any) {

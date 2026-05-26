@@ -18,7 +18,7 @@ import { defineMetadata } from "@vivtel/metadata";
 import { Injectable } from "@stackra/ts-container";
 
 import { PROCESSOR_METADATA } from "@/constants/tokens.constant";
-import type { ProcessorMetadata } from "@/interfaces/processor-metadata.interface";
+import type { IProcessorMetadata } from "@stackra/contracts";
 
 /**
  * Mark a class as a queue processor.
@@ -44,9 +44,9 @@ import type { ProcessorMetadata } from "@/interfaces/processor-metadata.interfac
  * ```
  */
 export function Processor(queue: string): ClassDecorator;
-export function Processor(options: ProcessorMetadata): ClassDecorator;
-export function Processor(arg: string | ProcessorMetadata): ClassDecorator {
-  const options: ProcessorMetadata = typeof arg === "string" ? { queue: arg } : arg;
+export function Processor(options: IProcessorMetadata): ClassDecorator;
+export function Processor(arg: string | IProcessorMetadata): ClassDecorator {
+  const options: IProcessorMetadata = typeof arg === "string" ? { queue: arg } : arg;
 
   return (target: Function) => {
     // Mark the class `@Injectable()` so the DI container registers it

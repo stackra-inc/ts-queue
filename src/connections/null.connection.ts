@@ -9,8 +9,8 @@
  */
 
 import { generateJobId } from "@/utils/generate-job-id.util";
-import type { JobOptions } from "@/interfaces/job-options.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
+import type { IJobOptions } from "@stackra/contracts";
+import type { IQueuedJob } from "@stackra/contracts";
 import { BaseConnection } from "./base.connection";
 
 /**
@@ -38,7 +38,7 @@ export class NullConnection extends BaseConnection {
    * @param _options - Optional dispatch options (ignored).
    * @returns A freshly generated job id.
    */
-  public async push<T = unknown>(_name: string, _data: T, _options?: JobOptions): Promise<string> {
+  public async push<T = unknown>(_name: string, _data: T, _options?: IJobOptions): Promise<string> {
     return generateJobId();
   }
 
@@ -51,7 +51,7 @@ export class NullConnection extends BaseConnection {
    * @param _queue - Queue tube name (ignored).
    * @returns Always `null`.
    */
-  public async pop(_queue?: string): Promise<QueuedJob | null> {
+  public async pop(_queue?: string): Promise<IQueuedJob | null> {
     return null;
   }
 

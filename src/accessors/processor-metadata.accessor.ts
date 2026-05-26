@@ -12,8 +12,8 @@ import { Injectable } from "@stackra/ts-container";
 import { getMetadata } from "@vivtel/metadata";
 
 import { ON_JOB_EVENT_METADATA, PROCESSOR_METADATA } from "@/constants/tokens.constant";
-import type { OnJobEventMetadata } from "@/interfaces/on-job-event-metadata.interface";
-import type { ProcessorMetadata } from "@/interfaces/processor-metadata.interface";
+import type { IOnJobEventMetadata } from "@/interfaces/on-job-event-metadata.interface";
+import type { IProcessorMetadata } from "@stackra/contracts";
 
 /**
  * Reads queue decorator metadata from classes and methods.
@@ -24,9 +24,9 @@ export class ProcessorMetadataAccessor {
    * Return the `@Processor` metadata for a class, or `undefined` if the
    * class isn't decorated.
    */
-  public getProcessorMetadata(target: unknown): ProcessorMetadata | undefined {
+  public getProcessorMetadata(target: unknown): IProcessorMetadata | undefined {
     if (!target || typeof target !== "function") return undefined;
-    return getMetadata<ProcessorMetadata>(PROCESSOR_METADATA, target as object);
+    return getMetadata<IProcessorMetadata>(PROCESSOR_METADATA, target as object);
   }
 
   /**
@@ -34,11 +34,11 @@ export class ProcessorMetadataAccessor {
    * if the method isn't decorated. Always returns an array — decorators
    * can stack, so a method may carry more than one listener entry.
    */
-  public getOnJobEventMetadata(target: unknown): OnJobEventMetadata[] | undefined {
+  public getOnJobEventMetadata(target: unknown): IOnJobEventMetadata[] | undefined {
     if (!target || (typeof target !== "function" && typeof target !== "object")) {
       return undefined;
     }
-    const meta = getMetadata<OnJobEventMetadata | OnJobEventMetadata[]>(
+    const meta = getMetadata<IOnJobEventMetadata | IOnJobEventMetadata[]>(
       ON_JOB_EVENT_METADATA,
       target as object,
     );

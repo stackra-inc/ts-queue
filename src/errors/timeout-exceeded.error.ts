@@ -10,7 +10,7 @@
  * @category Errors
  */
 
-import { QueueError } from "./queue.error";
+import { QueueError } from './queue.error';
 
 /**
  * Error thrown when a job processor exceeds its configured timeout.
@@ -20,15 +20,17 @@ import { QueueError } from "./queue.error";
  *
  * @example
  * ```typescript
- * @OnEvent(QueueEvent.JobTimedOut)
+ * import { QUEUE_EVENTS } from '@stackra/contracts';
+ *
+ * @OnEvent(QUEUE_EVENTS.JOB_TIMED_OUT)
  * onTimedOut(payload: { job: QueuedJob; error: TimeoutExceededError }) {
  *   metrics.increment('queue.timeouts', { name: payload.job.name });
  * }
  * ```
  */
 export class TimeoutExceededError extends QueueError {
-  public override readonly name: string = "TimeoutExceededError";
-  public override readonly code: string = "QUEUE_TIMEOUT_EXCEEDED";
+  public override readonly name: string = 'TimeoutExceededError';
+  public override readonly code: string = 'QUEUE_TIMEOUT_EXCEEDED';
 
   /**
    * Create a new TimeoutExceededError.
@@ -40,7 +42,7 @@ export class TimeoutExceededError extends QueueError {
   constructor(
     public readonly jobId: string,
     public readonly elapsedMs: number,
-    public readonly timeoutMs: number,
+    public readonly timeoutMs: number
   ) {
     super(`Job [${jobId}] exceeded its timeout after ${elapsedMs}ms (configured: ${timeoutMs}ms).`);
   }

@@ -10,8 +10,8 @@
  * @category Decorators
  */
 
-import { Inject } from "@stackra/ts-container";
-import { getQueueToken } from "@/constants/tokens.constant";
+import { Inject } from '@stackra/ts-container';
+import { getQueueToken } from '@/utils/get-queue-token.util';
 
 /**
  * Inject a queue handle scoped to `(connection, queue)`.
@@ -33,7 +33,7 @@ import { getQueueToken } from "@/constants/tokens.constant";
  */
 export function InjectQueue(
   queue?: string,
-  connection?: string,
+  connection?: string
 ): ParameterDecorator & PropertyDecorator {
   return Inject(getQueueToken(queue, connection));
 }

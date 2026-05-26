@@ -27,11 +27,11 @@
  * @category Connections
  */
 
-import { QueueDriverError } from "@/errors/queue-driver.error";
-import type { JobOptions } from "@/interfaces/job-options.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
-import type { QStashConnectionConfig } from "@/interfaces/qstash-connection-config.interface";
-import { BaseConnection } from "./base.connection";
+import { QueueDriverError } from '@/errors/queue-driver.error';
+import type { IJobOptions } from '@stackra/contracts';
+import type { IQueuedJob } from '@stackra/contracts';
+import type { IQStashQueueConnectionConfig } from '@stackra/contracts';
+import { BaseConnection } from './base.connection';
 
 /**
  * Payload shape sent to a proxy endpoint.
@@ -114,7 +114,7 @@ export class QStashConnection extends BaseConnection {
 
   constructor(
     name: string,
-    private readonly config: QStashConnectionConfig,
+    private readonly config: IQStashQueueConnectionConfig
   ) {
     super(name);
   }
@@ -135,18 +135,18 @@ export class QStashConnection extends BaseConnection {
    * @throws {QueueDriverError} When the destination cannot be resolved or
    *   the HTTP/SDK call fails.
    */
-  public async push<T = unknown>(jobName: string, data: T, options?: JobOptions): Promise<string> {
-    const mode = this.config.mode ?? "proxy";
+  public async push<T = unknown>(jobName: string, data: T, options?: IJobOptions): Promise<string> {
+    const mode = this.config.mode ?? 'proxy';
     const destination =
       (options?.driverOptions?.destination as string | undefined) ?? this.config.defaultDestination;
 
     if (!destination) {
       throw new QueueDriverError(
-        `[QStashConnection:${this.name}] push() requires a destination. Pass 'defaultDestination' in config or 'driverOptions.destination' at push time.`,
+        `[QStashConnection:${this.name}] push() requires a destination. Pass 'defaultDestination' in config or 'driverOptions.destination' at push time.`
       );
     }
 
-    return mode === "direct"
+    return mode === 'direct'
       ? this.pushDirect(jobName, data, destination, options)
       : this.pushProxy(jobName, data, destination, options);
   }
@@ -162,7 +162,7 @@ export class QStashConnection extends BaseConnection {
     delayMs: number,
     jobName: string,
     data: T,
-    options?: JobOptions,
+    options?: IJobOptions
   ): Promise<string> {
     return this.push(jobName, data, { ...options, delayMs });
   }
@@ -179,7 +179,7 @@ export class QStashConnection extends BaseConnection {
    * @param _queue - Queue tube name (ignored).
    * @returns Always `null`.
    */
-  public async pop(_queue?: string): Promise<QueuedJob | null> {
+  public async pop(_queue?: string): Promise<IQueuedJob | null> {
     return null;
   }
 
@@ -265,7 +265,7 @@ export class QStashConnection extends BaseConnection {
    */
   public async clear(): Promise<void> {
     throw new QueueDriverError(
-      `[QStashConnection:${this.name}] clear() is not supported. Use the QStash console or API from your backend to clear messages.`,
+      `[QStashConnection:${this.name}] clear() is not supported. Use the QStash console or API from your backend to clear messages.`
     );
   }
 
@@ -293,11 +293,11 @@ export class QStashConnection extends BaseConnection {
     name: string,
     data: T,
     destination: string,
-    options: JobOptions | undefined,
+    options: IJobOptions | undefined
   ): Promise<string> {
     if (!this.config.proxyUrl) {
       throw new QueueDriverError(
-        `[QStashConnection:${this.name}] mode: 'proxy' requires 'proxyUrl' in config.`,
+        `[QStashConnection:${this.name}] mode: 'proxy' requires 'proxyUrl' in config.`
       );
     }
 
@@ -312,20 +312,20 @@ export class QStashConnection extends BaseConnection {
     };
 
     const response = await fetch(this.config.proxyUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       throw new QueueDriverError(
-        `[QStashConnection:${this.name}] Proxy returned HTTP ${response.status}: ${await response.text()}`,
+        `[QStashConnection:${this.name}] Proxy returned HTTP ${response.status}: ${await response.text()}`
       );
     }
 
     // Backend responds with `{ messageId: string }` on success.
     const result = (await response.json()) as { messageId?: string; scheduleId?: string };
-    return result.messageId ?? result.scheduleId ?? "";
+    return result.messageId ?? result.scheduleId ?? '';
   }
 
   /**
@@ -338,12 +338,12 @@ export class QStashConnection extends BaseConnection {
     name: string,
     data: T,
     destination: string,
-    options: JobOptions | undefined,
+    options: IJobOptions | undefined
   ): Promise<string> {
     if (!this.config.token) {
       throw new QueueDriverError(
         `[QStashConnection:${this.name}] mode: 'direct' requires 'token' in config. ` +
-          `Do NOT ship this token in a public client — prefer 'mode: proxy' instead.`,
+          `Do NOT ship this token in a public client — prefer 'mode: proxy' instead.`
       );
     }
 
@@ -371,7 +371,7 @@ export class QStashConnection extends BaseConnection {
 
     try {
       // Dynamic import keeps @upstash/qstash fully optional.
-      const mod = await import(/* @vite-ignore */ "@upstash/qstash");
+      const mod = await import(/* @vite-ignore */ '@upstash/qstash');
       const Client = (mod as { Client: new (opts: { token: string; baseUrl?: string }) => unknown })
         .Client;
       this.directClient = new Client({
@@ -382,7 +382,7 @@ export class QStashConnection extends BaseConnection {
     } catch {
       throw new QueueDriverError(
         `[QStashConnection:${this.name}] mode: 'direct' requires '@upstash/qstash' to be installed. ` +
-          `Run 'pnpm add @upstash/qstash' or switch to 'mode: proxy'.`,
+          `Run 'pnpm add @upstash/qstash' or switch to 'mode: proxy'.`
       );
     }
   }

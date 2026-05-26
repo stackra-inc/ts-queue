@@ -1,4 +1,4 @@
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
+import type { IQueuedJob } from "@stackra/contracts";
 /**
  * SyncJobHandler — Type.
  *
@@ -8,8 +8,8 @@ import type { QueuedJob } from "@/interfaces/queued-job.interface";
 /**
  * Function that handles a single popped job.
  *
- * The sync driver calls this right after building the {@link QueuedJob}.
+ * The sync driver calls this right after building the {@link IQueuedJob}.
  * When no resolver is registered, the driver discards the job and returns
  * — identical to the null driver.
  */
-export type SyncJobHandler = (job: QueuedJob) => void | Promise<void>;
+export type SyncJobHandler = (job: IQueuedJob) => void | Promise<void>;

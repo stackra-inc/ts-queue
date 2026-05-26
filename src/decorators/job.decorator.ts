@@ -18,17 +18,17 @@
  * @category Decorators
  */
 
-import { Injectable } from "@stackra/ts-container";
-import { defineMetadata } from "@vivtel/metadata";
+import { Injectable } from '@stackra/ts-container';
+import { defineMetadata } from '@vivtel/metadata';
 
-import { JOB_METADATA } from "@/constants/tokens.constant";
-import type { JobMetadata } from "@/interfaces/job-metadata.interface";
+import { JOB_METADATA } from '@/constants/tokens.constant';
+import type { IJobMetadata } from '@stackra/contracts';
 
 /**
  * Configure class-level defaults for a job.
  *
  * Marks the class as `@Injectable()` and attaches the provided
- * {@link JobMetadata} via the `JOB_METADATA` key.
+ * {@link IJobMetadata} via the `JOB_METADATA` key.
  *
  * @param options - Default dispatch options for every instance of this job.
  * @returns A class decorator that wires both `@Injectable()` and the
@@ -53,7 +53,7 @@ import type { JobMetadata } from "@/interfaces/job-metadata.interface";
  * dispatcher.dispatch(SendReceiptJob, { saleId: '123' });
  * ```
  */
-export function Job(options: JobMetadata): ClassDecorator {
+export function Job(options: IJobMetadata): ClassDecorator {
   // Build the @Injectable() decorator once so we can reuse it across
   // every `Job(options)` invocation without re-creating the closure.
   const injectableDecorator = Injectable();

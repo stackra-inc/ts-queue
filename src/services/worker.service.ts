@@ -14,15 +14,15 @@
  * @category Services
  */
 
-import { QueueEvent, type QueueEventDetailName as QueueEventName } from "@stackra/contracts";
-import { JobStatus } from "@stackra/contracts";
-import { MaxAttemptsExceededError } from "@/errors/max-attempts-exceeded.error";
-import { TimeoutExceededError } from "@/errors/timeout-exceeded.error";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
-import { computeBackoff } from "@/utils/compute-backoff.util";
-import type { WorkerConfig } from "@/interfaces/worker-config.interface";
-import type { QueueEventBus } from "./event-bus.service";
-import { Logger } from "@stackra/ts-logger";
+import { JobStatus, QUEUE_EVENTS } from '@stackra/contracts';
+import type { IQueuedJob, QueueEventName } from '@stackra/contracts';
+
+import { MaxAttemptsExceededError } from '@/errors/max-attempts-exceeded.error';
+import { TimeoutExceededError } from '@/errors/timeout-exceeded.error';
+import { computeBackoff } from '@/utils/compute-backoff.util';
+import type { IWorkerConfig } from '@/interfaces/worker-config.interface';
+import type { QueueEventBus } from './event-bus.service';
+import { Logger } from '@stackra/ts-logger';
 
 /**
  * One polling loop per (connection, queue, host).
@@ -44,18 +44,18 @@ export class Worker {
   /** The scheduled next-tick handle, cleared on stop(). */
   private pendingTick: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private readonly config: WorkerConfig) {}
+  constructor(private readonly config: IWorkerConfig) {}
 
   /**
    * Begin polling for jobs.
    *
-   * Emits {@link QueueEvent.WorkerStarting} once on first call.
+   * Emits {@link QUEUE_EVENTS.WORKER_STARTING} once on first call.
    * Subsequent calls are no-ops — safe to call after reloads.
    */
   public start(): void {
     if (this.running) return;
     this.running = true;
-    this.emit(QueueEvent.WorkerStarting, {
+    this.emit(QUEUE_EVENTS.WORKER_STARTING, {
       connection: this.config.connection.name,
       queue: this.config.queue,
     });
@@ -67,7 +67,7 @@ export class Worker {
    *
    * Clears the next-tick timer. In-flight processors are not
    * interrupted — they complete naturally and the worker is marked
-   * stopped. Emits {@link QueueEvent.WorkerStopping}.
+   * stopped. Emits {@link QUEUE_EVENTS.WORKER_STOPPING}.
    */
   public stop(): void {
     if (!this.running) return;
@@ -76,7 +76,7 @@ export class Worker {
       clearTimeout(this.pendingTick);
       this.pendingTick = null;
     }
-    this.emit(QueueEvent.WorkerStopping, {
+    this.emit(QUEUE_EVENTS.WORKER_STOPPING, {
       connection: this.config.connection.name,
       queue: this.config.queue,
     });
@@ -99,7 +99,7 @@ export class Worker {
       this.tick().catch((err: Error | any) => {
         // Tick errors should never kill the loop — log and move on.
         this.logger.error(
-          `[Worker:${this.config.connection.name}:${this.config.queue}] tick error: ${(err as Error).message}`,
+          `[Worker:${this.config.connection.name}:${this.config.queue}] tick error: ${(err as Error).message}`
         );
         this.scheduleNext(this.config.options.pollIntervalMs);
       });
@@ -133,15 +133,15 @@ export class Worker {
    *
    * The try/catch/finally choreography mirrors Laravel's Worker:
    *
-   * 1. Emit `JobProcessing`.
+   * 1. Emit `JOB_PROCESSING`.
    * 2. Race `host.process(job)` vs. the timeout timer.
-   * 3. On success: mark complete, emit `JobProcessed`.
+   * 3. On success: mark complete, emit `JOB_PROCESSED`.
    * 4. On timeout/failure: apply the retry policy, release or fail,
-   *    emit `JobFailed` + `JobReleased` accordingly.
-   * 5. Always emit `JobAttempted` for instrumentation.
+   *    emit `JOB_FAILED` + `JOB_RELEASED` accordingly.
+   * 5. Always emit `JOB_ATTEMPTED` for instrumentation.
    */
-  private async handle(job: QueuedJob): Promise<void> {
-    this.emit(QueueEvent.JobProcessing, { job });
+  private async handle(job: IQueuedJob): Promise<void> {
+    this.emit(QUEUE_EVENTS.JOB_PROCESSING, { job });
 
     let error: Error | undefined;
     let timedOut = false;
@@ -150,18 +150,18 @@ export class Worker {
       await this.runWithTimeout(job);
       // Success path — take the job off the queue entirely.
       await this.config.connection.remove(job.id);
-      this.emit(QueueEvent.JobProcessed, { job });
+      this.emit(QUEUE_EVENTS.JOB_PROCESSED, { job });
     } catch (e: Error | any) {
       error = e as Error;
       timedOut = error instanceof TimeoutExceededError;
 
       if (timedOut) {
-        this.emit(QueueEvent.JobTimedOut, { job, error });
+        this.emit(QUEUE_EVENTS.JOB_TIMED_OUT, { job, error });
       }
 
       await this.handleFailure(job, error, timedOut);
     } finally {
-      this.emit(QueueEvent.JobAttempted, {
+      this.emit(QUEUE_EVENTS.JOB_ATTEMPTED, {
         job,
         attempts: job.attempts,
         error,
@@ -175,7 +175,7 @@ export class Worker {
    * The timer rejects with a {@link TimeoutExceededError}, which the
    * caller differentiates from a regular throw for reporting purposes.
    */
-  private async runWithTimeout(job: QueuedJob): Promise<void> {
+  private async runWithTimeout(job: IQueuedJob): Promise<void> {
     const timeoutMs = job.timeoutMs;
     const startedAt = Date.now();
 
@@ -199,12 +199,12 @@ export class Worker {
    * Flow:
    * - If the job has retries left, release it for another attempt with
    *   exponential backoff.
-   * - Otherwise, mark it permanently failed and emit `JobFailed` with a
+   * - Otherwise, mark it permanently failed and emit `JOB_FAILED` with a
    *   {@link MaxAttemptsExceededError}.
    * - If `failOnTimeout` is true, a timeout short-circuits to permanent
    *   failure even when retries remain.
    */
-  private async handleFailure(job: QueuedJob, error: Error, timedOut: boolean): Promise<void> {
+  private async handleFailure(job: IQueuedJob, error: Error, timedOut: boolean): Promise<void> {
     const policy = this.config.options;
     const failOnTimeout = policy.failOnTimeout;
 
@@ -217,7 +217,7 @@ export class Worker {
           ? error
           : new MaxAttemptsExceededError(job.id, job.attempts, error);
       await this.config.connection.fail(job.id, finalError.message);
-      this.emit(QueueEvent.JobFailed, {
+      this.emit(QUEUE_EVENTS.JOB_FAILED, {
         job: { ...job, status: JobStatus.Failed },
         error: finalError,
       });
@@ -226,7 +226,7 @@ export class Worker {
 
     const delayMs = computeBackoff(job.attempts + 1, job.backoffMs, policy.maxBackoffMs);
     await this.config.connection.release(job.id, delayMs);
-    this.emit(QueueEvent.JobReleased, { job, delayMs, error });
+    this.emit(QUEUE_EVENTS.JOB_RELEASED, { job, delayMs, error });
   }
 
   /**

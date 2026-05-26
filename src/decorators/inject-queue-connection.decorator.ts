@@ -9,9 +9,9 @@
  * @category Decorators
  */
 
-import { Inject } from "@stackra/ts-container";
-import { DEFAULT_QUEUE_CONNECTION_TOKEN } from "@stackra/contracts";
-import { getQueueConnectionToken } from "@/constants";
+import { Inject } from '@stackra/ts-container';
+import { DEFAULT_QUEUE_CONNECTION_TOKEN } from '@stackra/contracts';
+import { getQueueConnectionToken } from '@/utils/get-queue-connection-token.util';
 
 /**
  * Inject the {@link QueueConnection} for the named driver.

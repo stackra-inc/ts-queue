@@ -9,7 +9,7 @@
  * @category Hosts
  */
 
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
+import type { IQueuedJob } from '@stackra/contracts';
 
 /**
  * Base class every `@Processor`-decorated class must extend.
@@ -24,7 +24,7 @@ import type { QueuedJob } from "@/interfaces/queued-job.interface";
  * ```typescript
  * @Processor('tracking')
  * export class PixelProcessor extends WorkerHost<PixelPayload> {
- *   async process(job: QueuedJob<PixelPayload>): Promise<void> {
+ *   async process(job: IQueuedJob<PixelPayload>): Promise<void> {
  *     await this.pixels.fireEvent(job.data.eventName, job.data.params);
  *   }
  * }
@@ -40,5 +40,5 @@ export abstract class WorkerHost<T = unknown> {
    *
    * @param job - The job as rehydrated from the driver.
    */
-  public abstract process(job: QueuedJob<T>): Promise<void> | void;
+  public abstract process(job: IQueuedJob<T>): Promise<void> | void;
 }

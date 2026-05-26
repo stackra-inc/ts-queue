@@ -15,15 +15,15 @@
 
 import { JobStatus } from "@stackra/contracts";
 import { createQueuedJob } from "@/utils/create-queued-job.util";
-import type { JobOptions } from "@/interfaces/job-options.interface";
-import type { QueuedJob } from "@/interfaces/queued-job.interface";
+import type { IJobOptions } from "@stackra/contracts";
+import type { IQueuedJob } from "@stackra/contracts";
 import { BaseConnection } from "./base.connection";
 
 import { Str } from "@stackra/ts-support";
 /** Local shape for per-queue storage blobs. */
 interface StorageBlob {
   /** All jobs persisted under this queue tube. */
-  jobs: QueuedJob[];
+  jobs: IQueuedJob[];
   /** Whether processing on this queue tube is currently paused. */
   paused: boolean;
 }
@@ -64,7 +64,7 @@ export class LocalStorageConnection extends BaseConnection {
    * @param options - Optional dispatch options (queue, delay, retries, …).
    * @returns The id of the persisted (or deduplicated) job.
    */
-  public async push<T = unknown>(jobName: string, data: T, options?: JobOptions): Promise<string> {
+  public async push<T = unknown>(jobName: string, data: T, options?: IJobOptions): Promise<string> {
     const job = createQueuedJob({ name: jobName, data, connection: this.name, options });
     const blob = this.read(job.queue);
 
@@ -94,14 +94,14 @@ export class LocalStorageConnection extends BaseConnection {
    * @param queue - Queue tube name (defaults to `"default"`).
    * @returns The reserved job, or `null` if nothing is eligible.
    */
-  public async pop(queue: string = "default"): Promise<QueuedJob | null> {
+  public async pop(queue: string = "default"): Promise<IQueuedJob | null> {
     const blob = this.read(queue);
     if (blob.paused) return null;
 
     const now = Date.now();
 
     // Find the oldest eligible job (Pending or Delayed with availableAt in the past).
-    let chosen: QueuedJob | undefined;
+    let chosen: IQueuedJob | undefined;
     for (const job of blob.jobs) {
       const isEligible =
         (job.status === JobStatus.Pending || job.status === JobStatus.Delayed) &&

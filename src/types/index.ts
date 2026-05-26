@@ -1,9 +1,11 @@
 /**
- * @fileoverview Types barrel export.
+ * Types barrel.
  *
- * @module types
- * @category Types
+ * Cross-package types (`QueueConnectionConfig` discriminated union)
+ * live in `@stackra/contracts`. Only types internal to this package
+ * stay here.
+ *
+ * @module @stackra/ts-queue/types
  */
 
-export type { QueueConnectionConfig } from "./queue-connection-config.type";
-export type { DriverCreator } from "./driver-creator.type";
+export type { SyncJobHandler } from './sync-job-handler.type';

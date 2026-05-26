@@ -10,10 +10,9 @@
  * @category Services
  */
 
-import { Injectable, Inject, Optional } from "@stackra/ts-container";
-import { EVENT_EMITTER } from "@stackra/contracts";
-import type { QueueEventDetailName as QueueEventName } from "@stackra/contracts";
-import type { IEventEmitter } from "@stackra/contracts";
+import { Injectable, Inject, Optional } from '@stackra/ts-container';
+import { EVENT_EMITTER } from '@stackra/contracts';
+import type { IEventEmitter, QueueEventName } from '@stackra/contracts';
 
 /**
  * Publishes queue lifecycle events on the default event connection.
@@ -28,13 +27,14 @@ export class QueueEventBus {
   constructor(
     @Optional()
     @Inject(EVENT_EMITTER)
-    private readonly events?: IEventEmitter,
+    private readonly events?: IEventEmitter
   ) {}
 
   /**
    * Emit a queue lifecycle event.
    *
-   * @param event   - One of {@link QueueEvent} constants.
+   * @param event   - One of the {@link QUEUE_EVENTS} constants from
+   *                  `@stackra/contracts`.
    * @param payload - Event payload (`{ job, error?, … }`).
    */
   public emit(event: QueueEventName, payload: unknown): void {
