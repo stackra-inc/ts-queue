@@ -1,7 +1,7 @@
 {
   "name": "@stackra/ts-queue",
   "version": "0.1.0",
-  "description": "Client-side job queue — multiple drivers, processor discovery, retry, DI integration",
+  "description": "Client-side job queue \u2014 multiple drivers, processor discovery, retry, DI integration",
   "license": "MIT",
   "author": {
     "name": "Stackra L.L.C",
@@ -37,9 +37,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "dependencies": {},
   "peerDependencies": {
     "@heroui-pro/react": "^1.0.0-beta.3",
+    "@stackra/contracts": "*",
     "@stackra/ts-container": "*",
     "@stackra/ts-coordinator": "*",
     "@stackra/ts-events": "*",
@@ -47,9 +47,8 @@
     "@stackra/ts-support": "*",
     "@upstash/qstash": "^2.11.0",
     "@vivtel/metadata": "^1.0.5",
-    "react": "^19.2.6",
-    "reflect-metadata": "^0.2.2",
-    "@stackra/contracts": "*"
+    "react": "19.2.3",
+    "reflect-metadata": "^0.2.2"
   },
   "peerDependenciesMeta": {
     "@stackra/ts-container": {
@@ -91,7 +90,8 @@
     "@stackra/typescript-config": "^1.0.12",
     "@upstash/qstash": "^2.11.0",
     "@vivtel/metadata": "^1.0.5",
-    "react": "^19.2.6",
-    "reflect-metadata": "^0.2.2"
+    "react": "19.2.6",
+    "reflect-metadata": "^0.2.2",
+    "vitest": "^4.1.7"
   }
 }
